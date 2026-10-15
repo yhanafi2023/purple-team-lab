@@ -1,0 +1,11 @@
+# Detection: Suspicious / Encoded Command Execution
+# MITRE ATT&CK: T1059 (Command and Scripting Interpreter), T1059.001 (PowerShell)
+# Telemetry: Sysmon EID 1 (Process Create)
+# Logic: powershell.exe / cmd.exe launched with encoded or download-style flags.
+# Alert: scheduled every 5 min, Last 5 min window, results > 0,
+#        throttle 15 min by Computer. Severity: High.
+
+index=win-security sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1
+(Image="*\\powershell.exe" OR Image="*\\cmd.exe")
+(CommandLine="*-enc*" OR CommandLine="*-nop*" OR CommandLine="*Invoke-*" OR CommandLine="*downloadstring*")
+| table _time, Computer, ParentImage, Image, CommandLine, User

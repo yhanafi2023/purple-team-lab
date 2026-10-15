@@ -1,0 +1,15 @@
+# Detection: smbexec / service-based remote execution
+# MITRE ATT&CK: T1021.002 (SMB/Admin Shares), T1569.002 (Service Execution),
+#               T1059.003 (Windows Command Shell)
+# Telemetry: Sysmon EID 1 (Process Create)
+# Logic: services.exe spawning cmd.exe with the smbexec signature of output
+#        redirection to a local/loopback share (127.0.0.1, C$, __output).
+# Also watch: Windows System Event ID 7045 (new service installed) with a
+#        "cmd.exe /Q /c" binary path.
+# Alert: scheduled every 5 min, Last 5 min window, results > 0,
+#        throttle 30 min by Computer. Severity: Critical.
+
+index=win-security sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1
+ParentImage="*\\services.exe" Image="*\\cmd.exe"
+(CommandLine="*127.0.0.1*" OR CommandLine="*__output*" OR CommandLine="*\\C$\\*")
+| table _time, Computer, ParentImage, Image, CommandLine

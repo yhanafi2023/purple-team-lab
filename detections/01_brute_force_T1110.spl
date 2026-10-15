@@ -1,0 +1,14 @@
+# Detection: RDP/SMB Brute Force
+# MITRE ATT&CK: T1110 (Brute Force)
+# Telemetry: Windows Security Event Log (4625 failed logon, 4624 success)
+# Logic: multiple failed logons followed by a success from a single source IP.
+# Alert: scheduled every 5 min, Last 15 min window (failures + success must
+#        fall in the same window), trigger when results > 0, throttle 60 min
+#        by Source_Network_Address. Severity: High.
+#
+# Note: generate the real failure->success pattern with an RDP brute force.
+# SMB can log ANONYMOUS LOGON null-session "successes" that are false positives.
+
+index=win-security sourcetype="WinEventLog:Security" (EventCode=4625 OR EventCode=4624)
+| stats count(eval(EventCode=4625)) AS fails count(eval(EventCode=4624)) AS success by Source_Network_Address
+| where fails > 3 AND success > 0

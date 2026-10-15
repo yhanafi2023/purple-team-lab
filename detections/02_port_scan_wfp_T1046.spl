@@ -1,0 +1,19 @@
+# Detection: Port Scan
+# MITRE ATT&CK: T1046 (Network Service Discovery)
+# Telemetry: Windows Filtering Platform (Security 5156 allowed / 5157 blocked)
+#
+# Why WFP and not Sysmon EID 3: Sysmon network events are process-attributed,
+# so they are blind to scan hits on CLOSED ports (no process, no event). WFP
+# connection logging records every attempt, open or closed, so it actually
+# sees the full sweep.
+#
+# Enable WFP auditing first (admin, on the Windows host):
+#   auditpol /set /subcategory:"Filtering Platform Connection" /success:enable /failure:enable
+#   (turn it back off after testing; it is chatty)
+#
+# Alert: scheduled every 5 min, Last 5 min window, results > 0,
+#        throttle 30 min by Source_Address. Severity: Medium.
+
+index=win-security sourcetype="WinEventLog:Security" (EventCode=5156 OR EventCode=5157)
+| stats dc(Dest_Port) AS ports by Source_Address
+| where ports > 20
